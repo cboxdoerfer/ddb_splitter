@@ -1,0 +1,4 @@
+*.o
+*.swp
+*ycm_*
+/ddb_splitter_test
