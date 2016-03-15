@@ -40,12 +40,14 @@ main(int argc, char *argv[])
     gtk_container_set_border_width (GTK_CONTAINER (window), 10);
     gtk_widget_set_size_request (window, 400, 400);
 
+    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     /* Build the various other widgets */
     GtkWidget *vbox = gtk_vbox_new (FALSE, 10);
     GtkWidget *toolbar = gtk_toolbar_new();
     GtkToolItem *add = gtk_tool_button_new_from_stock (GTK_STOCK_ADD);
     GtkToolItem *remove = gtk_tool_button_new_from_stock (GTK_STOCK_REMOVE);
     GtkToolItem *tool_box = gtk_tool_item_new ();
+    G_GNUC_END_IGNORE_DEPRECATIONS
 
     GtkWidget *splitter = ddb_splitter_new (GTK_ORIENTATION_VERTICAL);
 
