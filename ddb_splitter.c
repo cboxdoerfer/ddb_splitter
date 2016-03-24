@@ -35,9 +35,8 @@ enum
 {
     PROP_0,
     PROP_ORIENTATION,
+    PROP_SIZE_MODE,
     PROP_PROPORTION,
-    PROP_LOCK_C1,
-    PROP_LOCK_C2,
 };
 
 static void
@@ -77,12 +76,13 @@ struct _DdbSplitterPrivate
     /* the list of child widgets */
     GtkWidget *child1;
     GtkWidget *child2;
+    guint child1_size;
+    guint child2_size;
 
     /* configurable parameters */
     GtkOrientation orientation;
+    DdbSplitterSizeMode size_mode;
     gfloat proportion;
-    guint  lock_child1 : 1;
-    guint  lock_child2 : 1;
 };
 
 G_DEFINE_TYPE (DdbSplitter, ddb_splitter, GTK_TYPE_CONTAINER)
@@ -111,6 +111,18 @@ ddb_splitter_class_init (DdbSplitterClass *klass)
     gtkcontainer_class->forall = ddb_splitter_forall;
 
     /**
+     * DdbSplitter::size_mode:
+     *
+     * The size mode of the splitter.
+     **/
+    g_object_class_install_property (gobject_class,
+            PROP_SIZE_MODE,
+            g_param_spec_enum ("size-mode",
+                "Size mode",
+                "The size mode of the splitter widget",
+                DDB_SPLITTER_TYPE_SIZE_MODE, DDB_SPLITTER_SIZE_MODE_PROP,
+                G_PARAM_READWRITE));
+    /**
      * DdbSplitter::orientation:
      *
      * The orientation of the splitter.
@@ -134,30 +146,6 @@ ddb_splitter_class_init (DdbSplitterClass *klass)
                 "The percentage of space allocated to the first child",
                 -G_MAXFLOAT, 1.0, -1.0,
                 G_PARAM_READWRITE));
-    /**
-     * DdbSplitter::lock_child1:
-     *
-     * Whether the first child should have a fixed size.
-     **/
-    g_object_class_install_property (gobject_class,
-            PROP_LOCK_C1,
-            g_param_spec_boolean ("lock-child1",
-                "Lock Child 1",
-                "Whether the first child should have a fixed size",
-                FALSE,
-                G_PARAM_READWRITE));
-    /**
-     * DdbSplitter::lock_child2:
-     *
-     * Whether the second child should have a fixed size.
-     **/
-    g_object_class_install_property (gobject_class,
-            PROP_LOCK_C2,
-            g_param_spec_boolean ("lock-child2",
-                "Lock Child 2",
-                "Whether the second child should have a fixed size",
-                FALSE,
-                G_PARAM_READWRITE));
 }
 
 static void
@@ -167,11 +155,12 @@ ddb_splitter_init (DdbSplitter *splitter)
     splitter->priv = DDB_SPLITTER_GET_PRIVATE (splitter);
 
     splitter->priv->orientation = GTK_ORIENTATION_HORIZONTAL;
+    splitter->priv->size_mode = DDB_SPLITTER_SIZE_MODE_PROP;
     splitter->priv->child1 = NULL;
     splitter->priv->child2 = NULL;
+    splitter->priv->child1_size = 0;
+    splitter->priv->child2_size = 0;
     splitter->priv->proportion = 0.5f;
-    splitter->priv->lock_child1 = 0;
-    splitter->priv->lock_child2 = 0;
     /* we don't provide our own window */
     gtk_widget_set_has_window (GTK_WIDGET (splitter), FALSE);
 }
@@ -190,16 +179,12 @@ ddb_splitter_get_property (GObject *object,
             g_value_set_enum (value, ddb_splitter_get_orientation (splitter));
             break;
 
+        case PROP_SIZE_MODE:
+            g_value_set_enum (value, ddb_splitter_get_size_mode (splitter));
+            break;
+
         case PROP_PROPORTION:
             g_value_set_float (value, ddb_splitter_get_proportion (splitter));
-            break;
-
-        case PROP_LOCK_C1:
-            g_value_set_boolean (value, ddb_splitter_get_lock_child1 (splitter));
-            break;
-
-        case PROP_LOCK_C2:
-            g_value_set_boolean (value, ddb_splitter_get_lock_child2 (splitter));
             break;
 
         default:
@@ -222,16 +207,12 @@ ddb_splitter_set_property (GObject *object,
             ddb_splitter_set_orientation (splitter, g_value_get_enum (value));
             break;
 
+        case PROP_SIZE_MODE:
+            ddb_splitter_set_size_mode (splitter, g_value_get_enum (value));
+            break;
+
         case PROP_PROPORTION:
             ddb_splitter_set_proportion (splitter, g_value_get_float (value));
-            break;
-
-        case PROP_LOCK_C1:
-            ddb_splitter_set_lock_child1 (splitter, g_value_get_boolean (value));
-            break;
-
-        case PROP_LOCK_C2:
-            ddb_splitter_set_lock_child2 (splitter, g_value_get_boolean (value));
             break;
 
         default:
@@ -292,57 +273,101 @@ ddb_splitter_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
     if (splitter->priv->orientation == GTK_ORIENTATION_HORIZONTAL) {
         if (child1_visible) {
             child1_allocation.height = MAX (1, con_height);
-            if (num_visible_children == 1) {
-                child1_allocation.width = MAX (1, con_width);
+            if (splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C1) {
+                child1_allocation.width = splitter->priv->child1_size;
             }
             else {
-                child1_allocation.width = MAX (1, (con_width) * splitter->priv->proportion);
+                if (num_visible_children == 1) {
+                    child1_allocation.width = MAX (1, con_width);
+                }
+                else if (child2_visible && splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C2) {
+                    child1_allocation.width = MAX (1, con_width - splitter->priv->child2_size);
+                }
+                else {
+                    child1_allocation.width = MAX (1, con_width * splitter->priv->proportion);
+                }
             }
             child1_allocation.x =allocation->x + border_width;
             child1_allocation.y = allocation->y + border_width;
 
             gtk_widget_size_allocate (splitter->priv->child1, &child1_allocation);
+            splitter->priv->child1_size = child1_allocation.width;
         }
         if (child2_visible) {
             child2_allocation.height = MAX (1, con_height);
-            if (num_visible_children == 1) {
-                child2_allocation.width = MAX (1, con_width);
+            if (splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C2) {
+                child2_allocation.width = splitter->priv->child2_size;
             }
             else {
-                child2_allocation.width = MAX (1, con_width - child1_allocation.width);
+                if (num_visible_children == 1) {
+                    child2_allocation.width = MAX (1, con_width);
+                }
+                else if (child1_visible && splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C1) {
+                    child2_allocation.width = MAX (1, con_width - splitter->priv->child1_size);
+                }
+                else {
+                    child2_allocation.width = MAX (1, con_width - child1_allocation.width);
+                }
             }
             child2_allocation.x = child1_allocation.x + child1_allocation.width;
             child2_allocation.y = allocation->y + border_width;
 
             gtk_widget_size_allocate (splitter->priv->child2, &child2_allocation);
+            splitter->priv->child2_size = child2_allocation.width;
+        }
+        GtkAllocation a;
+        gtk_widget_get_allocation (splitter->priv->child1, &a);
+        if (splitter->priv->orientation == GTK_ORIENTATION_HORIZONTAL) {
+            splitter->priv->child1_size = a.width;
+        }
+        else {
+            splitter->priv->child1_size = a.height;
         }
     }
     else {
         if (child1_visible) {
             child1_allocation.width = MAX (1, con_width);
-            if (num_visible_children == 1) {
-                child1_allocation.height = MAX (1, con_height);
+            if (splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C1) {
+                child1_allocation.height = splitter->priv->child1_size;
             }
             else {
-                child1_allocation.height = MAX (1, (con_height) * splitter->priv->proportion);
+                if (num_visible_children == 1) {
+                    child1_allocation.height = MAX (1, con_height);
+                }
+                else if (child2_visible && splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C2) {
+                    child1_allocation.height = MAX (1, con_height - splitter->priv->child2_size);
+                }
+                else {
+                    child1_allocation.height = MAX (1, (con_height) * splitter->priv->proportion);
+                }
             }
             child1_allocation.x =allocation->x + border_width;
             child1_allocation.y = allocation->y + border_width;
 
             gtk_widget_size_allocate (splitter->priv->child1, &child1_allocation);
+            splitter->priv->child1_size = child1_allocation.height;
         }
         if (child2_visible) {
             child2_allocation.width = MAX (1, con_width);
-            if (num_visible_children == 1) {
-                child2_allocation.height = MAX (1, con_height);
+            if (splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C2) {
+                child2_allocation.height = splitter->priv->child2_size;
             }
             else {
-                child2_allocation.height = MAX (1, con_height - child1_allocation.height);
+                if (num_visible_children == 1) {
+                    child2_allocation.height = MAX (1, con_height);
+                }
+                else if (child1_visible && splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C1) {
+                    child2_allocation.height = MAX (1, con_height - splitter->priv->child1_size);
+                }
+                else {
+                    child2_allocation.height = MAX (1, con_height - child1_allocation.height);
+                }
             }
             child2_allocation.x = allocation->x + border_width;
             child2_allocation.y = child1_allocation.y + child1_allocation.height;
 
             gtk_widget_size_allocate (splitter->priv->child2, &child2_allocation);
+            splitter->priv->child2_size = child2_allocation.height;
         }
     }
 
@@ -441,6 +466,41 @@ ddb_splitter_forall (GtkContainer *container,
 }
 
 /**
+ * ddb_splitter_get_size_mode:
+ * @splitter : a #DdbSplitter.
+ *
+ * Returns the size mode of the splitter
+ *
+ * Returns: the size mode of @splitter.
+ **/
+DdbSplitterSizeMode
+ddb_splitter_get_size_mode (const DdbSplitter *splitter)
+{
+    g_return_val_if_fail (DDB_IS_SPLITTER (splitter), DDB_SPLITTER_SIZE_MODE_PROP);
+    return splitter->priv->size_mode;
+}
+
+/**
+ * ddb_splitter_set_size_mode:
+ * @splitter    : a #DdbSplitter.
+ * @size_mode : The size_mode of the splitter.
+ *
+ * Sets the size_mode of the @splitter
+ **/
+void
+ddb_splitter_set_size_mode (DdbSplitter *splitter, DdbSplitterSizeMode size_mode)
+{
+    g_return_if_fail (DDB_IS_SPLITTER (splitter));
+
+    if (G_LIKELY (splitter->priv->size_mode != size_mode))
+    {
+        splitter->priv->size_mode = size_mode;
+        gtk_widget_queue_resize (GTK_WIDGET (splitter));
+        g_object_notify (G_OBJECT (splitter), "size_mode");
+    }
+}
+
+/**
  * ddb_splitter_get_orientation:
  * @splitter : a #DdbSplitter.
  *
@@ -510,81 +570,9 @@ ddb_splitter_set_proportion (DdbSplitter *splitter, gfloat proportion)
     }
 }
 
-/**
- * ddb_splitter_get_lock_child1:
- * @splitter : a #DdbSplitter.
- *
- * Returns whether the first child of @splitter is locked
- *
- * Returns: %TRUE if the size of the first child is locked.
- **/
-gboolean
-ddb_splitter_get_lock_child1 (const DdbSplitter *splitter)
-{
-    g_return_val_if_fail (DDB_IS_SPLITTER (splitter), FALSE);
-    return splitter->priv->lock_child1;
-}
-
-/**
- * ddb_splitter_get_lock_child2:
- * @splitter : a #DdbSplitter.
- *
- * Returns whether the second child of @splitter is locked
- *
- * Returns: %TRUE if the size of the second child is locked.
- **/
-gboolean
-ddb_splitter_get_lock_child2 (const DdbSplitter *splitter)
-{
-    g_return_val_if_fail (DDB_IS_SPLITTER (splitter), FALSE);
-    return splitter->priv->lock_child2;
-}
-
-/**
- * ddb_splitter_set_lock_child1:
- * @splitter       : a #DdbSplitter.
- * @lock : Set to %TRUE to lock the size of the first child.
- *                Set to %FALSE if this is not your desired behaviour.
- *
- * Locks the size of the first child of @splitter
- **/
-void
-ddb_splitter_set_lock_child1 (DdbSplitter *splitter, gboolean lock_child)
-{
-    g_return_if_fail (DDB_IS_SPLITTER (splitter));
-
-    if (G_LIKELY (splitter->priv->lock_child1 != lock_child))
-    {
-        splitter->priv->lock_child1 = lock_child;
-        gtk_widget_queue_resize (GTK_WIDGET (splitter));
-        g_object_notify (G_OBJECT (splitter), "lock-child1");
-    }
-}
-
-/**
- * ddb_splitter_set_lock_child2:
- * @splitter       : a #DdbSplitter.
- * @lock : Set to %TRUE to lock the size of the second child.
- *                Set to %FALSE if this is not your desired behaviour.
- *
- * Locks the size of the second child of @splitter
- **/
-void
-ddb_splitter_set_lock_child2 (DdbSplitter *splitter, gboolean lock_child)
-{
-    g_return_if_fail (DDB_IS_SPLITTER (splitter));
-
-    if (G_LIKELY (splitter->priv->lock_child2 != lock_child))
-    {
-        splitter->priv->lock_child2 = lock_child;
-        gtk_widget_queue_resize (GTK_WIDGET (splitter));
-        g_object_notify (G_OBJECT (splitter), "lock-child2");
-    }
-}
-
 /* Return a new PSquare cast to a GtkWidget */
 GtkWidget *
 ddb_splitter_new(GtkOrientation orientation)
 {
-    return GTK_WIDGET(g_object_new(ddb_splitter_get_type(), "orientation", orientation, NULL));
+    return GTK_WIDGET (g_object_new (ddb_splitter_get_type (), "orientation", orientation, NULL));
 }

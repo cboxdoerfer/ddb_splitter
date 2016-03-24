@@ -21,6 +21,7 @@
 #define __DDB_SPLITTER_H__
 
 #include <gtk/gtk.h>
+#include "ddb_splitter_size_mode.h"
 
 G_BEGIN_DECLS
 
@@ -66,20 +67,16 @@ ddb_splitter_get_type (void) G_GNUC_CONST;
 GtkWidget
 *ddb_splitter_new (GtkOrientation orientation);
 
+DdbSplitterSizeMode
+ddb_splitter_get_size_mode (const DdbSplitter *splitter);
 GtkOrientation
 ddb_splitter_get_orientation (const DdbSplitter *splitter);
 gfloat
 ddb_splitter_get_proportion (const DdbSplitter *splitter);
-gboolean
-ddb_splitter_get_lock_child1 (const DdbSplitter *splitter);
-gboolean
-ddb_splitter_get_lock_child2 (const DdbSplitter *splitter);
+void
+ddb_splitter_set_size_mode (DdbSplitter *splitter, DdbSplitterSizeMode size_mode);
 void
 ddb_splitter_set_proportion (DdbSplitter *splitter, gfloat proportion);
-void
-ddb_splitter_set_lock_child1 (DdbSplitter *splitter, gboolean lock_child);
-void
-ddb_splitter_set_lock_child2 (DdbSplitter *splitter, gboolean lock_child);
 
 G_END_DECLS
 

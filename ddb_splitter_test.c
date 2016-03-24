@@ -15,7 +15,34 @@ add_clicked(GtkToolButton *button, GtkWidget *splitter)
 }
 
 static void
-remove_clicked(GtkToolButton *button, GtkWidget *square)
+lock1_clicked(GtkToolButton *button, GtkWidget *splitter)
+{
+    DdbSplitterSizeMode mode = ddb_splitter_get_size_mode (DDB_SPLITTER (splitter));
+    if (mode != DDB_SPLITTER_SIZE_MODE_LOCK_C1) {
+        ddb_splitter_set_size_mode (DDB_SPLITTER (splitter), DDB_SPLITTER_SIZE_MODE_LOCK_C1);
+    }
+}
+
+static void
+lock2_clicked(GtkToolButton *button, GtkWidget *splitter)
+{
+    DdbSplitterSizeMode mode = ddb_splitter_get_size_mode (DDB_SPLITTER (splitter));
+    if (mode != DDB_SPLITTER_SIZE_MODE_LOCK_C2) {
+        ddb_splitter_set_size_mode (DDB_SPLITTER (splitter), DDB_SPLITTER_SIZE_MODE_LOCK_C2);
+    }
+}
+
+static void
+prop_clicked(GtkToolButton *button, GtkWidget *splitter)
+{
+    DdbSplitterSizeMode mode = ddb_splitter_get_size_mode (DDB_SPLITTER (splitter));
+    if (mode != DDB_SPLITTER_SIZE_MODE_PROP) {
+        ddb_splitter_set_size_mode (DDB_SPLITTER (splitter), DDB_SPLITTER_SIZE_MODE_PROP);
+    }
+}
+
+static void
+remove_clicked(GtkToolButton *button, GtkWidget *splitter)
 {
     //gtk_container_remove(GTK_CONTAINER(splitter), last->data);
 }
@@ -46,6 +73,9 @@ main(int argc, char *argv[])
     GtkWidget *toolbar = gtk_toolbar_new();
     GtkToolItem *add = gtk_tool_button_new_from_stock (GTK_STOCK_ADD);
     GtkToolItem *remove = gtk_tool_button_new_from_stock (GTK_STOCK_REMOVE);
+    GtkToolItem *lock1 = gtk_tool_button_new (NULL, "Lock child1");
+    GtkToolItem *lock2 = gtk_tool_button_new (NULL, "Lock child2");
+    GtkToolItem *prop = gtk_tool_button_new (NULL, "Prop sizing");
     GtkToolItem *tool_box = gtk_tool_item_new ();
     G_GNUC_END_IGNORE_DEPRECATIONS
 
@@ -59,11 +89,17 @@ main(int argc, char *argv[])
     g_signal_connect (window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     g_signal_connect (add, "clicked", G_CALLBACK(add_clicked), splitter);
     g_signal_connect (remove, "clicked", G_CALLBACK(remove_clicked), splitter);
+    g_signal_connect (lock1, "clicked", G_CALLBACK(lock1_clicked), splitter);
+    g_signal_connect (lock2, "clicked", G_CALLBACK(lock2_clicked), splitter);
+    g_signal_connect (prop, "clicked", G_CALLBACK(prop_clicked), splitter);
     g_signal_connect (scale, "value-changed", G_CALLBACK(scale_button_value_changed), splitter);
 
     /* Put all the widgets together */
     gtk_toolbar_insert (GTK_TOOLBAR(toolbar), GTK_TOOL_ITEM (add), -1);
     gtk_toolbar_insert (GTK_TOOLBAR(toolbar), GTK_TOOL_ITEM (remove), -1);
+    gtk_toolbar_insert (GTK_TOOLBAR(toolbar), GTK_TOOL_ITEM (lock1), -1);
+    gtk_toolbar_insert (GTK_TOOLBAR(toolbar), GTK_TOOL_ITEM (lock2), -1);
+    gtk_toolbar_insert (GTK_TOOLBAR(toolbar), GTK_TOOL_ITEM (prop), -1);
     gtk_toolbar_insert (GTK_TOOLBAR(toolbar), GTK_TOOL_ITEM (tool_box), -1);
     gtk_box_pack_start (GTK_BOX(vbox), GTK_WIDGET (toolbar), FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX(vbox), splitter, TRUE, TRUE, 0);
