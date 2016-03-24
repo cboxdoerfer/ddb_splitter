@@ -378,7 +378,6 @@ ddb_splitter_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
     }
 
     if (!child1_visible && !child2_visible) {
-        printf("fallback\n");
         GtkAllocation child_allocation;
 
         if (splitter->priv->child1)
