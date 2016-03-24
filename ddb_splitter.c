@@ -319,10 +319,13 @@ ddb_splitter_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
         gtk_widget_get_allocation (splitter->priv->child1, &a);
         if (splitter->priv->orientation == GTK_ORIENTATION_HORIZONTAL) {
             splitter->priv->child1_size = a.width;
+            splitter->priv->proportion = (float)a.width/con_width;
         }
         else {
             splitter->priv->child1_size = a.height;
+            splitter->priv->proportion = (float)a.height/con_height;
         }
+        printf("proportion: %f\n", splitter->priv->proportion);
     }
     else {
         if (child1_visible) {
@@ -346,6 +349,9 @@ ddb_splitter_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 
             gtk_widget_size_allocate (splitter->priv->child1, &child1_allocation);
             splitter->priv->child1_size = child1_allocation.height;
+            if (splitter->priv->size_mode != DDB_SPLITTER_SIZE_MODE_PROP) {
+                splitter->priv->proportion = (float)child1_allocation.height/con_height;
+            }
         }
         if (child2_visible) {
             child2_allocation.width = MAX (1, con_width);
