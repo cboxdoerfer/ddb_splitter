@@ -79,7 +79,7 @@ main(int argc, char *argv[])
     GtkToolItem *tool_box = gtk_tool_item_new ();
     G_GNUC_END_IGNORE_DEPRECATIONS
 
-    GtkWidget *splitter = ddb_splitter_new (GTK_ORIENTATION_VERTICAL);
+    GtkWidget *splitter = ddb_splitter_new (GTK_ORIENTATION_HORIZONTAL);
 
     GtkWidget *scale = gtk_scale_button_new (GTK_ICON_SIZE_SMALL_TOOLBAR, 0.0, 1.0, 0.01, NULL);
     gtk_scale_button_set_value (GTK_SCALE_BUTTON (scale), ddb_splitter_get_proportion (DDB_SPLITTER (splitter)));

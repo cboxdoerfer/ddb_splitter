@@ -273,77 +273,76 @@ ddb_splitter_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
     if (splitter->priv->orientation == GTK_ORIENTATION_HORIZONTAL) {
         if (child1_visible) {
             child1_allocation.height = MAX (1, con_height);
+            gint width = 0;
             if (splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C1) {
-                child1_allocation.width = splitter->priv->child1_size;
+                width = splitter->priv->child1_size;
             }
             else {
                 if (num_visible_children == 1) {
-                    child1_allocation.width = MAX (1, con_width);
+                    width = con_width;
                 }
                 else if (child2_visible && splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C2) {
-                    child1_allocation.width = MAX (1, con_width - splitter->priv->child2_size);
+                    width = con_width - splitter->priv->child2_size;
                 }
                 else {
-                    child1_allocation.width = MAX (1, con_width * splitter->priv->proportion);
+                    width = con_width * splitter->priv->proportion;
                 }
             }
+            child1_allocation.width = MAX (1, width);
             child1_allocation.x =allocation->x + border_width;
             child1_allocation.y = allocation->y + border_width;
 
             gtk_widget_size_allocate (splitter->priv->child1, &child1_allocation);
             splitter->priv->child1_size = child1_allocation.width;
+            if (splitter->priv->size_mode != DDB_SPLITTER_SIZE_MODE_PROP) {
+                splitter->priv->proportion = (float)child1_allocation.width/con_width;
+            }
         }
         if (child2_visible) {
             child2_allocation.height = MAX (1, con_height);
+            gint width = 0;
             if (splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C2) {
-                child2_allocation.width = splitter->priv->child2_size;
+                width = splitter->priv->child2_size;
             }
             else {
                 if (num_visible_children == 1) {
-                    child2_allocation.width = MAX (1, con_width);
+                    width = con_width;
                 }
                 else if (child1_visible && splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C1) {
-                    child2_allocation.width = MAX (1, con_width - splitter->priv->child1_size);
+                    width = con_width - splitter->priv->child1_size;
                 }
                 else {
-                    child2_allocation.width = MAX (1, con_width - child1_allocation.width);
+                    width = con_width - child1_allocation.width;
                 }
             }
+            child2_allocation.width = MAX (1, width);
             child2_allocation.x = child1_allocation.x + child1_allocation.width;
             child2_allocation.y = allocation->y + border_width;
 
             gtk_widget_size_allocate (splitter->priv->child2, &child2_allocation);
             splitter->priv->child2_size = child2_allocation.width;
         }
-        GtkAllocation a;
-        gtk_widget_get_allocation (splitter->priv->child1, &a);
-        if (splitter->priv->orientation == GTK_ORIENTATION_HORIZONTAL) {
-            splitter->priv->child1_size = a.width;
-            splitter->priv->proportion = (float)a.width/con_width;
-        }
-        else {
-            splitter->priv->child1_size = a.height;
-            splitter->priv->proportion = (float)a.height/con_height;
-        }
-        printf("proportion: %f\n", splitter->priv->proportion);
     }
     else {
         if (child1_visible) {
             child1_allocation.width = MAX (1, con_width);
+            gint height = 0;
             if (splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C1) {
-                child1_allocation.height = splitter->priv->child1_size;
+                height = splitter->priv->child1_size;
             }
             else {
                 if (num_visible_children == 1) {
-                    child1_allocation.height = MAX (1, con_height);
+                    height = con_height;
                 }
                 else if (child2_visible && splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C2) {
-                    child1_allocation.height = MAX (1, con_height - splitter->priv->child2_size);
+                    height = con_height - splitter->priv->child2_size;
+
                 }
                 else {
-                    child1_allocation.height = MAX (1, (con_height) * splitter->priv->proportion);
+                    height = con_height * splitter->priv->proportion;
                 }
             }
+            child1_allocation.height = MAX (1, height);
             child1_allocation.x =allocation->x + border_width;
             child1_allocation.y = allocation->y + border_width;
 
@@ -355,20 +354,22 @@ ddb_splitter_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
         }
         if (child2_visible) {
             child2_allocation.width = MAX (1, con_width);
+            gint height = 0;
             if (splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C2) {
-                child2_allocation.height = splitter->priv->child2_size;
+                height = splitter->priv->child2_size;
             }
             else {
                 if (num_visible_children == 1) {
-                    child2_allocation.height = MAX (1, con_height);
+                    height = con_height;
                 }
                 else if (child1_visible && splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_LOCK_C1) {
-                    child2_allocation.height = MAX (1, con_height - splitter->priv->child1_size);
+                    height = con_height - splitter->priv->child1_size;
                 }
                 else {
-                    child2_allocation.height = MAX (1, con_height - child1_allocation.height);
+                    height = con_height - child1_allocation.height;
                 }
             }
+            child2_allocation.height = MAX (1, height);
             child2_allocation.x = allocation->x + border_width;
             child2_allocation.y = child1_allocation.y + child1_allocation.height;
 
@@ -567,7 +568,8 @@ ddb_splitter_set_proportion (DdbSplitter *splitter, gfloat proportion)
 {
     g_return_if_fail (DDB_IS_SPLITTER (splitter));
 
-    if (G_LIKELY (splitter->priv->proportion != proportion))
+    if (splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_PROP
+           && G_LIKELY (splitter->priv->proportion != proportion))
     {
         splitter->priv->proportion = proportion;
         gtk_widget_queue_resize (GTK_WIDGET (splitter));
