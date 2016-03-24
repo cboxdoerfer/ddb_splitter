@@ -44,7 +44,8 @@ prop_clicked(GtkToolButton *button, GtkWidget *splitter)
 static void
 remove_clicked(GtkToolButton *button, GtkWidget *splitter)
 {
-    //gtk_container_remove(GTK_CONTAINER(splitter), last->data);
+    ddb_splitter_remove_c1 (DDB_SPLITTER (splitter));
+    ddb_splitter_remove_c2 (DDB_SPLITTER (splitter));
 }
 
 void

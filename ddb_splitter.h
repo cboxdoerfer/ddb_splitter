@@ -76,6 +76,10 @@ ddb_splitter_get_proportion (const DdbSplitter *splitter);
 void
 ddb_splitter_set_size_mode (DdbSplitter *splitter, DdbSplitterSizeMode size_mode);
 void
+ddb_splitter_remove_c1 (DdbSplitter *splitter);
+void
+ddb_splitter_remove_c2 (DdbSplitter *splitter);
+void
 ddb_splitter_set_proportion (DdbSplitter *splitter, gfloat proportion);
 
 G_END_DECLS

@@ -471,6 +471,29 @@ ddb_splitter_forall (GtkContainer *container,
     }
 }
 
+static void
+ddb_splitter_remove_child (DdbSplitter *splitter, guint child)
+{
+    if (child == 1 && splitter->priv->child1) {
+        ddb_splitter_remove (GTK_CONTAINER (splitter), splitter->priv->child1);
+    }
+    else if (child == 2 && splitter->priv->child2) {
+        ddb_splitter_remove (GTK_CONTAINER (splitter), splitter->priv->child2);
+    }
+}
+
+void
+ddb_splitter_remove_c1 (DdbSplitter *splitter)
+{
+    ddb_splitter_remove_child (splitter, 1);
+}
+
+void
+ddb_splitter_remove_c2 (DdbSplitter *splitter)
+{
+    ddb_splitter_remove_child (splitter, 2);
+}
+
 /**
  * ddb_splitter_get_size_mode:
  * @splitter : a #DdbSplitter.
