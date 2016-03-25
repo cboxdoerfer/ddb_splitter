@@ -39,6 +39,21 @@ enum
     PROP_PROPORTION,
 };
 
+static gboolean
+ddb_splitter_button_press (GtkWidget *widget,
+			GdkEventButton *event);
+static gboolean
+ddb_splitter_button_release (GtkWidget *widget,
+		             GdkEventButton *event);
+static gboolean
+ddb_splitter_grab_broken (GtkWidget *widget,
+		GdkEventGrabBroken *event);
+static void
+ddb_splitter_grab_notify (GtkWidget *widget,
+		       gboolean   was_grabbed);
+static gboolean
+ddb_splitter_motion (GtkWidget *widget,
+		     GdkEventMotion *event);
 #if GTK_CHECK_VERSION(3,0,0)
 static gboolean
 ddb_splitter_draw (GtkWidget *widget,
@@ -102,6 +117,10 @@ struct _DdbSplitterPrivate
     GdkWindow *handle;
     GdkRectangle handle_pos;
     gint handle_size;
+    gint drag_pos;
+    guint in_drag : 1;
+    guint position_set : 1;
+    guint32 grab_time;
 
     /* configurable parameters */
     GtkOrientation orientation;
@@ -137,6 +156,11 @@ ddb_splitter_class_init (DdbSplitterClass *klass)
     gtkwidget_class->unrealize = ddb_splitter_unrealize;
     gtkwidget_class->map = ddb_splitter_map;
     gtkwidget_class->unmap = ddb_splitter_unmap;
+    gtkwidget_class->button_press_event = ddb_splitter_button_press;
+    gtkwidget_class->button_release_event = ddb_splitter_button_release;
+    gtkwidget_class->motion_notify_event = ddb_splitter_motion;
+    gtkwidget_class->grab_broken_event = ddb_splitter_grab_broken;
+    gtkwidget_class->grab_notify = ddb_splitter_grab_notify;
 
     gtkcontainer_class = GTK_CONTAINER_CLASS (klass);
     gtkcontainer_class->add = ddb_splitter_add;
@@ -189,6 +213,9 @@ ddb_splitter_init (DdbSplitter *splitter)
 
     splitter->priv->orientation = GTK_ORIENTATION_HORIZONTAL;
     splitter->priv->size_mode = DDB_SPLITTER_SIZE_MODE_PROP;
+    splitter->priv->drag_pos = -1;
+    splitter->priv->in_drag = FALSE;
+    splitter->priv->position_set = FALSE;
     splitter->priv->child1 = NULL;
     splitter->priv->child2 = NULL;
     splitter->priv->child1_size = 0;
@@ -260,6 +287,133 @@ ddb_splitter_set_property (GObject *object,
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
             break;
     }
+}
+
+static gboolean
+ddb_splitter_button_press (GtkWidget      *widget,
+			GdkEventButton *event)
+{
+    DdbSplitter *splitter = DDB_SPLITTER (widget);
+
+    if (!splitter->priv->in_drag &&
+            (event->window == splitter->priv->handle) && (event->button == 1))
+    {
+        /* We need a server grab here, not gtk_grab_add(), since
+         * we don't want to pass events on to the widget's children */
+        if (gdk_pointer_grab (splitter->priv->handle, FALSE,
+                    GDK_POINTER_MOTION_HINT_MASK
+                    | GDK_BUTTON1_MOTION_MASK
+                    | GDK_BUTTON_RELEASE_MASK
+                    | GDK_ENTER_NOTIFY_MASK
+                    | GDK_LEAVE_NOTIFY_MASK,
+                    NULL, NULL,
+                    event->time) != GDK_GRAB_SUCCESS)
+            return FALSE;
+
+        splitter->priv->in_drag = TRUE;
+        splitter->priv->grab_time = event->time;
+
+        if (splitter->priv->orientation == GTK_ORIENTATION_HORIZONTAL)
+            splitter->priv->drag_pos = event->x;
+        else
+            splitter->priv->drag_pos = event->y;
+
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static gboolean
+ddb_splitter_grab_broken (GtkWidget          *widget,
+		       GdkEventGrabBroken *event)
+{
+    DdbSplitter *splitter = DDB_SPLITTER (widget);
+
+    splitter->priv->in_drag = FALSE;
+    splitter->priv->drag_pos = -1;
+    splitter->priv->position_set = TRUE;
+
+    return TRUE;
+}
+
+static void
+stop_drag (DdbSplitter *splitter)
+{
+    splitter->priv->in_drag = FALSE;
+    splitter->priv->drag_pos = -1;
+    splitter->priv->position_set = TRUE;
+    gdk_display_pointer_ungrab (gtk_widget_get_display (GTK_WIDGET (splitter)),
+            splitter->priv->grab_time);
+}
+
+static void
+ddb_splitter_grab_notify (GtkWidget *widget,
+		       gboolean   was_grabbed)
+{
+    DdbSplitter *splitter = DDB_SPLITTER (widget);
+
+    if (!was_grabbed && splitter->priv->in_drag)
+        stop_drag (splitter);
+}
+
+static gboolean
+ddb_splitter_button_release (GtkWidget      *widget,
+			  GdkEventButton *event)
+{
+    DdbSplitter *splitter = DDB_SPLITTER (widget);
+
+    if (splitter->priv->in_drag && (event->button == 1))
+    {
+        stop_drag (splitter);
+
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static void
+update_drag (DdbSplitter *splitter)
+{
+    gint pos;
+    gint handle_size;
+    gint size;
+
+    if (splitter->priv->orientation == GTK_ORIENTATION_HORIZONTAL)
+        gtk_widget_get_pointer (GTK_WIDGET (splitter), &pos, NULL);
+    else
+        gtk_widget_get_pointer (GTK_WIDGET (splitter), NULL, &pos);
+
+    pos -= splitter->priv->drag_pos;
+
+    size = pos;
+
+    GtkAllocation a;
+    gtk_widget_get_allocation (GTK_WIDGET (splitter), &a);
+    if (size != splitter->priv->child1_size) {
+        if (splitter->priv->orientation == GTK_ORIENTATION_HORIZONTAL) {
+            ddb_splitter_set_proportion (splitter, (float)size/a.width);
+        }
+        else {
+            ddb_splitter_set_proportion (splitter, (float)size/a.height);
+        }
+    }
+}
+
+static gboolean
+ddb_splitter_motion (GtkWidget      *widget,
+		  GdkEventMotion *event)
+{
+    DdbSplitter *splitter = DDB_SPLITTER (widget);
+
+    if (splitter->priv->in_drag)
+    {
+        update_drag (splitter);
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 #if GTK_CHECK_VERSION(3,0,0)
