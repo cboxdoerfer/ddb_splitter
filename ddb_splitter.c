@@ -300,6 +300,10 @@ ddb_splitter_button_press (GtkWidget      *widget,
 {
     DdbSplitter *splitter = DDB_SPLITTER (widget);
 
+    if (event->button == 1 && event->type == GDK_2BUTTON_PRESS) {
+        ddb_splitter_set_proportion (splitter, 0.5f);
+        return TRUE;
+    }
     if (!splitter->priv->in_drag &&
             (event->window == splitter->priv->handle) && (event->button == 1))
     {
@@ -398,10 +402,10 @@ update_drag (DdbSplitter *splitter)
     gtk_widget_get_allocation (GTK_WIDGET (splitter), &a);
     if (size != splitter->priv->child1_size) {
         if (splitter->priv->orientation == GTK_ORIENTATION_HORIZONTAL) {
-            ddb_splitter_set_proportion (splitter, (float)size/a.width);
+            ddb_splitter_set_proportion (splitter, CLAMP ((float)size/a.width, 0.0f, 1.0f));
         }
         else {
-            ddb_splitter_set_proportion (splitter, (float)size/a.height);
+            ddb_splitter_set_proportion (splitter, CLAMP ((float)size/a.height, 0.0f, 1.0f));
         }
     }
 }
@@ -665,7 +669,7 @@ ddb_splitter_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
             gtk_widget_size_allocate (splitter->priv->child1, &child1_allocation);
             splitter->priv->child1_size = child1_allocation.width;
             if (splitter->priv->size_mode != DDB_SPLITTER_SIZE_MODE_PROP) {
-                splitter->priv->proportion = (float)child1_allocation.width/(con_width - handle_size);
+                splitter->priv->proportion = CLAMP ((float)child1_allocation.width/(con_width - handle_size), 0.0f, 1.0f);
             }
             splitter->priv->handle_pos.x = allocation->x + splitter->priv->child1_size + border_width;
             splitter->priv->handle_pos.y = allocation->y + border_width;
@@ -738,7 +742,7 @@ ddb_splitter_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
             gtk_widget_size_allocate (splitter->priv->child1, &child1_allocation);
             splitter->priv->child1_size = child1_allocation.height;
             if (splitter->priv->size_mode != DDB_SPLITTER_SIZE_MODE_PROP) {
-                splitter->priv->proportion = (float)child1_allocation.height/(con_height - handle_size);
+                splitter->priv->proportion = CLAMP ((float)child1_allocation.height/(con_height - handle_size), 0.0f, 1.0f);
             }
             splitter->priv->handle_pos.x = allocation->x + border_width;
             splitter->priv->handle_pos.y = allocation->y + splitter->priv->child1_size + border_width;
