@@ -1,5 +1,5 @@
-CFLAGS = `pkg-config --cflags gtk+-3.0` -g
-LIBS = `pkg-config --libs gtk+-3.0`
+CFLAGS = `pkg-config --cflags gtk+-2.0` -g
+LIBS = `pkg-config --libs gtk+-2.0`
 LDFLAGS = -lm
 OBJ = ddb_splitter_test.o ddb_splitter.o ddb_splitter_size_mode.o
 

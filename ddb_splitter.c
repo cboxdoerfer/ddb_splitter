@@ -39,6 +39,11 @@ enum
     PROP_PROPORTION,
 };
 
+#if !GTK_CHECK_VERSION(3,0,0)
+static void
+ddb_splitter_size_request (GtkWidget        *widget,
+                           GtkRequisition   *requisition);
+#endif
 static gboolean
 ddb_splitter_button_press (GtkWidget *widget,
 			GdkEventButton *event);
@@ -87,11 +92,9 @@ ddb_splitter_set_property (GObject *object,
                            GParamSpec *pspec);
 
 static void
-ddb_splitter_set_orientation (DdbSplitter *splitter, GtkOrientation orientation);
+ddb_splitter_set_orientation (DdbSplitter *splitter,
+                              GtkOrientation orientation);
 
-//static void
-//ddb_splitter_size_request (GtkWidget *widget,
-//                           GtkRequisition *requisition);
 static void
 ddb_splitter_size_allocate (GtkWidget *widget,
                             GtkAllocation *allocation);
@@ -145,7 +148,9 @@ ddb_splitter_class_init (DdbSplitterClass *klass)
     gobject_class->set_property = ddb_splitter_set_property;
 
     gtkwidget_class = GTK_WIDGET_CLASS (klass);
-    //gtkwidget_class->size_request = ddb_splitter_size_request;
+#if !GTK_CHECK_VERSION(3,0,0)
+    gtkwidget_class->size_request = ddb_splitter_size_request;
+#endif
     gtkwidget_class->size_allocate = ddb_splitter_size_allocate;
     gtkwidget_class->realize = ddb_splitter_realize;
 #if GTK_CHECK_VERSION(3,0,0)
@@ -504,8 +509,14 @@ ddb_splitter_realize (GtkWidget *widget)
         attributes_mask = GDK_WA_X | GDK_WA_Y;
         if (gtk_widget_is_sensitive (widget))
         {
-            attributes.cursor = gdk_cursor_new_for_display (gtk_widget_get_display (widget),
-                    GDK_CROSS);
+            if (splitter->priv->orientation == GTK_ORIENTATION_VERTICAL) {
+                attributes.cursor = gdk_cursor_new_for_display (gtk_widget_get_display (widget),
+                        GDK_SB_V_DOUBLE_ARROW);
+            }
+            else {
+                attributes.cursor = gdk_cursor_new_for_display (gtk_widget_get_display (widget),
+                        GDK_SB_H_DOUBLE_ARROW);
+            }
             attributes_mask |= GDK_WA_CURSOR;
         }
 
@@ -560,36 +571,45 @@ ddb_splitter_unmap (GtkWidget *widget)
     GTK_WIDGET_CLASS (ddb_splitter_parent_class)->unmap (widget);
 }
 
-//static void
-//ddb_splitter_size_request (GtkWidget      *widget,
-//        GtkRequisition *requisition)
-//{
-//    DdbSplitter *splitter = DDB_SPLITTER (widget);
-//
-//    gint border_width = 0;
-//    GtkRequisition req_c1;
-//    req_c1.width = 0;
-//    req_c1.height = 0;
-//    if (gtk_widget_get_visible (splitter->priv->child1)) {
-//        gtk_widget_size_request (splitter->priv->child1, &req_c1);
-//    }
-//
-//    GtkRequisition req_c2;
-//    req_c2.width = 0;
-//    req_c2.height = 0;
-//    if (gtk_widget_get_visible (splitter->priv->child2)) {
-//        gtk_widget_size_request (splitter->priv->child2, &req_c2);
-//    }
-//
-//    requisition->width += border_width * 2;
-//    requisition->height += border_width * 2;
-//
-//    requisition->width += MAX (req_c1.width, req_c2.width);
-//    requisition->height += MAX (req_c1.height, req_c2.height);
-//
-//    // TODO: handle size
-//}
-//
+#if !GTK_CHECK_VERSION(3,0,0)
+static void
+ddb_splitter_size_request (GtkWidget      *widget,
+        GtkRequisition *requisition)
+{
+    DdbSplitter *splitter = DDB_SPLITTER (widget);
+
+    gint border_width = 0;
+    GtkRequisition req_c1;
+    req_c1.width = 0;
+    req_c1.height = 0;
+    if (gtk_widget_get_visible (splitter->priv->child1)) {
+        gtk_widget_size_request (splitter->priv->child1, &req_c1);
+    }
+
+    GtkRequisition req_c2;
+    req_c2.width = 0;
+    req_c2.height = 0;
+    if (gtk_widget_get_visible (splitter->priv->child2)) {
+        gtk_widget_size_request (splitter->priv->child2, &req_c2);
+    }
+
+    requisition->width += border_width * 2;
+    requisition->height += border_width * 2;
+
+    requisition->width += MAX (req_c1.width, req_c2.width);
+    requisition->height += MAX (req_c1.height, req_c2.height);
+
+    if (splitter->priv->child1 && gtk_widget_get_visible (splitter->priv->child1) &&
+            splitter->priv->child2 && gtk_widget_get_visible (splitter->priv->child2))
+    {
+        if (splitter->priv->orientation == GTK_ORIENTATION_HORIZONTAL)
+            requisition->width += 5;
+        else
+            requisition->height += 5;
+    }
+}
+#endif
+
 static void
 ddb_splitter_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 {
