@@ -233,7 +233,7 @@ ddb_splitter_init (DdbSplitter *splitter)
     splitter->priv->handle_pos.height = 5;
     splitter->priv->proportion = 0.5f;
     /* we don't provide our own window */
-    gtk_widget_set_can_focus (GTK_WIDGET (splitter), TRUE);
+    gtk_widget_set_can_focus (GTK_WIDGET (splitter), FALSE);
     gtk_widget_set_has_window (GTK_WIDGET (splitter), FALSE);
     gtk_widget_set_redraw_on_allocate (GTK_WIDGET (splitter), FALSE);
 }
@@ -586,14 +586,14 @@ ddb_splitter_size_request (GtkWidget      *widget,
     GtkRequisition req_c1;
     req_c1.width = 0;
     req_c1.height = 0;
-    if (gtk_widget_get_visible (splitter->priv->child1)) {
+    if (splitter->priv->child1 && gtk_widget_get_visible (splitter->priv->child1)) {
         gtk_widget_size_request (splitter->priv->child1, &req_c1);
     }
 
     GtkRequisition req_c2;
     req_c2.width = 0;
     req_c2.height = 0;
-    if (gtk_widget_get_visible (splitter->priv->child2)) {
+    if (splitter->priv->child2 && gtk_widget_get_visible (splitter->priv->child2)) {
         gtk_widget_size_request (splitter->priv->child2, &req_c2);
     }
 
