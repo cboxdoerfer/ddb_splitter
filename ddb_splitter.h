@@ -75,6 +75,8 @@ gfloat
 ddb_splitter_get_proportion (const DdbSplitter *splitter);
 void
 ddb_splitter_set_size_mode (DdbSplitter *splitter, DdbSplitterSizeMode size_mode);
+gboolean
+ddb_splitter_add_child_at_pos (DdbSplitter *splitter, GtkWidget *child, guint pos);
 void
 ddb_splitter_remove_c1 (DdbSplitter *splitter);
 void

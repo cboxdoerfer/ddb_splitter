@@ -812,8 +812,7 @@ ddb_splitter_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
         gdk_window_invalidate_rect (window, &splitter->priv->handle_pos, FALSE);
     }
 
-    if (gtk_widget_get_realized (widget))
-    {
+    if (gtk_widget_get_realized (widget)) {
         if (gtk_widget_get_mapped (widget))
             gdk_window_show (splitter->priv->handle);
 
@@ -825,8 +824,7 @@ ddb_splitter_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
                     handle_size,
                     splitter->priv->handle_pos.height);
         }
-        else
-        {
+        else {
             gdk_window_move_resize (splitter->priv->handle,
                     splitter->priv->handle_pos.x,
                     splitter->priv->handle_pos.y,
@@ -931,6 +929,35 @@ void
 ddb_splitter_remove_c2 (DdbSplitter *splitter)
 {
     ddb_splitter_remove_child (splitter, 2);
+}
+
+gboolean
+ddb_splitter_add_child_at_pos (DdbSplitter *splitter, GtkWidget *child, guint pos)
+{
+    if (pos == 0 && !splitter->priv->child1) {
+        splitter->priv->child1 = child;
+    }
+    else if (pos == 1 && !splitter->priv->child2) {
+        splitter->priv->child2 = child;
+    }
+    else {
+        return FALSE;
+    }
+
+    gtk_widget_set_parent (child, GTK_WIDGET (splitter));
+    /* realize the widget if required */
+    if (gtk_widget_get_realized (GTK_WIDGET (splitter)))
+        gtk_widget_realize (child);
+
+    /* map the widget if required */
+    if (gtk_widget_get_visible (GTK_WIDGET (splitter)) && gtk_widget_get_visible (child))
+    {
+        if (gtk_widget_get_mapped (GTK_WIDGET (splitter)))
+            gtk_widget_map (child);
+    }
+
+    gtk_widget_queue_resize (GTK_WIDGET (splitter));
+    return TRUE;
 }
 
 /**
