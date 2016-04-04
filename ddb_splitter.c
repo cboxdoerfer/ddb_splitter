@@ -46,19 +46,19 @@ ddb_splitter_size_request (GtkWidget        *widget,
 #endif
 static gboolean
 ddb_splitter_button_press (GtkWidget *widget,
-			GdkEventButton *event);
+                        GdkEventButton *event);
 static gboolean
 ddb_splitter_button_release (GtkWidget *widget,
-		             GdkEventButton *event);
+                             GdkEventButton *event);
 static gboolean
 ddb_splitter_grab_broken (GtkWidget *widget,
-		GdkEventGrabBroken *event);
+                GdkEventGrabBroken *event);
 static void
 ddb_splitter_grab_notify (GtkWidget *widget,
-		       gboolean   was_grabbed);
+                       gboolean   was_grabbed);
 static gboolean
 ddb_splitter_motion (GtkWidget *widget,
-		     GdkEventMotion *event);
+                     GdkEventMotion *event);
 #if GTK_CHECK_VERSION(3,0,0)
 static gboolean
 ddb_splitter_draw (GtkWidget *widget,
@@ -66,7 +66,7 @@ ddb_splitter_draw (GtkWidget *widget,
 #else
 static gboolean
 ddb_splitter_expose (GtkWidget      *widget,
-		  GdkEventExpose *event);
+                  GdkEventExpose *event);
 #endif
 static void
 ddb_splitter_realize (GtkWidget *widget);
@@ -296,7 +296,7 @@ ddb_splitter_set_property (GObject *object,
 
 static gboolean
 ddb_splitter_button_press (GtkWidget      *widget,
-			GdkEventButton *event)
+                        GdkEventButton *event)
 {
     DdbSplitter *splitter = DDB_SPLITTER (widget);
 
@@ -335,7 +335,7 @@ ddb_splitter_button_press (GtkWidget      *widget,
 
 static gboolean
 ddb_splitter_grab_broken (GtkWidget          *widget,
-		       GdkEventGrabBroken *event)
+                       GdkEventGrabBroken *event)
 {
     DdbSplitter *splitter = DDB_SPLITTER (widget);
 
@@ -358,7 +358,7 @@ stop_drag (DdbSplitter *splitter)
 
 static void
 ddb_splitter_grab_notify (GtkWidget *widget,
-		       gboolean   was_grabbed)
+                       gboolean   was_grabbed)
 {
     DdbSplitter *splitter = DDB_SPLITTER (widget);
 
@@ -368,7 +368,7 @@ ddb_splitter_grab_notify (GtkWidget *widget,
 
 static gboolean
 ddb_splitter_button_release (GtkWidget      *widget,
-			  GdkEventButton *event)
+                          GdkEventButton *event)
 {
     DdbSplitter *splitter = DDB_SPLITTER (widget);
 
@@ -412,7 +412,7 @@ update_drag (DdbSplitter *splitter)
 
 static gboolean
 ddb_splitter_motion (GtkWidget      *widget,
-		  GdkEventMotion *event)
+                  GdkEventMotion *event)
 {
     DdbSplitter *splitter = DDB_SPLITTER (widget);
 
@@ -451,7 +451,7 @@ ddb_splitter_draw (GtkWidget *widget,
 
 static gboolean
 ddb_splitter_expose (GtkWidget      *widget,
-		  GdkEventExpose *event)
+                  GdkEventExpose *event)
 {
     DdbSplitter *splitter = DDB_SPLITTER (widget);
 
