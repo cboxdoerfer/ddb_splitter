@@ -673,8 +673,14 @@ ddb_splitter_size_request (GtkWidget      *widget,
     requisition->width += border_width * 2;
     requisition->height += border_width * 2;
 
-    requisition->width += MAX (req_c1.width, req_c2.width);
-    requisition->height += MAX (req_c1.height, req_c2.height);
+    if (splitter->priv->orientation == GTK_ORIENTATION_HORIZONTAL) {
+        requisition->width += req_c1.width + req_c2.width;
+        requisition->height += MAX (req_c1.height, req_c2.height);
+    }
+    else {
+        requisition->width += MAX (req_c1.width, req_c2.width);
+        requisition->height += req_c1.height + req_c2.height;
+    }
 
     if (splitter->priv->child1 && gtk_widget_get_visible (splitter->priv->child1) &&
             splitter->priv->child2 && gtk_widget_get_visible (splitter->priv->child2))
