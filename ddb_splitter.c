@@ -43,7 +43,30 @@ enum
 static void
 ddb_splitter_size_request (GtkWidget        *widget,
                            GtkRequisition   *requisition);
+#else
+static void
+ddb_splitter_get_preferred_width (GtkWidget *widget,
+                               gint *minimum,
+                               gint *natural);
+
+static void
+ddb_splitter_get_preferred_height (GtkWidget *widget,
+                               gint *minimum,
+                               gint *natural);
+
+static void
+ddb_splitter_get_preferred_width_for_height (GtkWidget *widget,
+                               gint height,
+                               gint *minimum,
+                               gint *natural);
+
+static void
+ddb_splitter_get_preferred_height_for_width (GtkWidget *widget,
+                               gint width,
+                               gint *minimum,
+                               gint *natural);
 #endif
+
 static gboolean
 ddb_splitter_button_press (GtkWidget *widget,
                         GdkEventButton *event);
@@ -150,6 +173,11 @@ ddb_splitter_class_init (DdbSplitterClass *klass)
     gtkwidget_class = GTK_WIDGET_CLASS (klass);
 #if !GTK_CHECK_VERSION(3,0,0)
     gtkwidget_class->size_request = ddb_splitter_size_request;
+#else
+    gtkwidget_class->get_preferred_width = ddb_splitter_get_preferred_width;
+    gtkwidget_class->get_preferred_height = ddb_splitter_get_preferred_height;
+    gtkwidget_class->get_preferred_width_for_height = ddb_splitter_get_preferred_width_for_height;
+    gtkwidget_class->get_preferred_height_for_width = ddb_splitter_get_preferred_height_for_width;
 #endif
     gtkwidget_class->size_allocate = ddb_splitter_size_allocate;
     gtkwidget_class->realize = ddb_splitter_realize;
@@ -656,6 +684,94 @@ ddb_splitter_size_request (GtkWidget      *widget,
         else
             requisition->height += 5;
     }
+}
+#else
+static void
+ddb_splitter_get_preferred_width (GtkWidget *widget,
+                               gint *minimum,
+                               gint *natural)
+{
+    DdbSplitter *splitter = DDB_SPLITTER (widget);
+    gint min = 0;
+    gint nat = 0;
+    gint child1_min = 0;
+    gint child1_nat = 0;
+    gint child2_min = 0;
+    gint child2_nat = 0;
+
+    if (splitter->priv->child1 && gtk_widget_get_visible (splitter->priv->child1)) {
+        gtk_widget_get_preferred_width (splitter->priv->child1, &child1_min, &child2_nat);
+    }
+    if (splitter->priv->child2 && gtk_widget_get_visible (splitter->priv->child2)) {
+        gtk_widget_get_preferred_width (splitter->priv->child2, &child2_min, &child2_nat);
+    }
+
+    if (splitter->priv->orientation == GTK_ORIENTATION_HORIZONTAL) {
+        nat = child1_nat + child2_nat;
+        if (splitter->priv->child1 && gtk_widget_get_visible (splitter->priv->child1)
+                && splitter->priv->child2 && gtk_widget_get_visible (splitter->priv->child2)) {
+            min += splitter->priv->handle_size;
+            nat += splitter->priv->handle_size;
+        }
+    }
+    else {
+        nat = MAX (child1_nat, child2_nat);
+    }
+    *minimum = min;
+    *natural = nat;
+}
+
+static void
+ddb_splitter_get_preferred_height (GtkWidget *widget,
+                               gint *minimum,
+                               gint *natural)
+{
+    DdbSplitter *splitter = DDB_SPLITTER (widget);
+    gint min = 0;
+    gint nat = 0;
+    gint child1_min = 0;
+    gint child1_nat = 0;
+    gint child2_min = 0;
+    gint child2_nat = 0;
+
+    if (splitter->priv->child1 && gtk_widget_get_visible (splitter->priv->child1)) {
+        gtk_widget_get_preferred_height (splitter->priv->child1, &child1_min, &child2_nat);
+    }
+    if (splitter->priv->child2 && gtk_widget_get_visible (splitter->priv->child2)) {
+        gtk_widget_get_preferred_height (splitter->priv->child2, &child2_min, &child2_nat);
+    }
+
+    if (splitter->priv->orientation == GTK_ORIENTATION_VERTICAL) {
+        nat = child1_nat + child2_nat;
+        if (splitter->priv->child1 && gtk_widget_get_visible (splitter->priv->child1)
+                && splitter->priv->child2 && gtk_widget_get_visible (splitter->priv->child2)) {
+            min += splitter->priv->handle_size;
+            nat += splitter->priv->handle_size;
+        }
+    }
+    else {
+        nat = MAX (child1_nat, child2_nat);
+    }
+    *minimum = min;
+    *natural = nat;
+}
+
+static void
+ddb_splitter_get_preferred_width_for_height (GtkWidget *widget,
+                               gint height,
+                               gint *minimum,
+                               gint *natural)
+{
+    ddb_splitter_get_preferred_width (widget, minimum, natural);
+}
+
+static void
+ddb_splitter_get_preferred_height_for_width (GtkWidget *widget,
+                               gint width,
+                               gint *minimum,
+                               gint *natural)
+{
+    ddb_splitter_get_preferred_height (widget, minimum, natural);
 }
 #endif
 

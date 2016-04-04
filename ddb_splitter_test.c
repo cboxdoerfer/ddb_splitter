@@ -65,8 +65,11 @@ main(int argc, char *argv[])
     /* Build the main window */
     GtkWidget *window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title (GTK_WINDOW (window), "DdbSplitter Test");
-    gtk_container_set_border_width (GTK_CONTAINER (window), 10);
-    gtk_widget_set_size_request (window, 400, 400);
+    //gtk_container_set_border_width (GTK_CONTAINER (window), 10);
+    gtk_widget_set_size_request (window, 800, 400);
+
+    GtkSettings *default_settings = gtk_settings_get_default();
+    g_object_set(default_settings, "gtk-button-images", FALSE, NULL);
 
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     /* Build the various other widgets */
@@ -75,8 +78,11 @@ main(int argc, char *argv[])
     GtkToolItem *add = gtk_tool_button_new_from_stock (GTK_STOCK_ADD);
     GtkToolItem *remove = gtk_tool_button_new_from_stock (GTK_STOCK_REMOVE);
     GtkToolItem *lock1 = gtk_tool_button_new (NULL, "Lock child1");
+    gtk_tool_button_set_label (GTK_TOOL_BUTTON (lock1), "Lock child 1");
     GtkToolItem *lock2 = gtk_tool_button_new (NULL, "Lock child2");
+    gtk_tool_button_set_label (GTK_TOOL_BUTTON (lock2), "Lock child 2");
     GtkToolItem *prop = gtk_tool_button_new (NULL, "Prop sizing");
+    gtk_tool_button_set_label (GTK_TOOL_BUTTON (prop), "Prop sizing");
     GtkToolItem *tool_box = gtk_tool_item_new ();
     G_GNUC_END_IGNORE_DEPRECATIONS
 
