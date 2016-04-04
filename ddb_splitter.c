@@ -300,7 +300,9 @@ ddb_splitter_button_press (GtkWidget      *widget,
 {
     DdbSplitter *splitter = DDB_SPLITTER (widget);
 
-    if (event->button == 1 && event->type == GDK_2BUTTON_PRESS) {
+    if (event->window == splitter->priv->handle
+           && event->button == 1
+           && event->type == GDK_2BUTTON_PRESS) {
         ddb_splitter_set_proportion (splitter, 0.5f);
         return TRUE;
     }
