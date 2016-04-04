@@ -333,6 +333,33 @@ ddb_splitter_button_press (GtkWidget      *widget,
     return FALSE;
 }
 
+static void
+ddb_splitter_update_cursor (DdbSplitter *splitter)
+{
+    if (gtk_widget_get_realized (GTK_WIDGET (splitter))) {
+        GdkCursor *cursor = NULL;
+        if (splitter->priv->size_mode != DDB_SPLITTER_SIZE_MODE_PROP) {
+            cursor = NULL;
+        }
+        else {
+            if (splitter->priv->orientation == GTK_ORIENTATION_VERTICAL) {
+                cursor = gdk_cursor_new_for_display (gtk_widget_get_display (GTK_WIDGET (splitter)),
+                        GDK_SB_V_DOUBLE_ARROW);
+            }
+            else {
+                cursor = gdk_cursor_new_for_display (gtk_widget_get_display (GTK_WIDGET (splitter)),
+                        GDK_SB_H_DOUBLE_ARROW);
+            }
+        }
+
+        gdk_window_set_cursor (splitter->priv->handle, cursor);
+
+        if (cursor) {
+            gdk_cursor_unref (cursor);
+        }
+    }
+}
+
 static gboolean
 ddb_splitter_grab_broken (GtkWidget          *widget,
                        GdkEventGrabBroken *event)
@@ -436,9 +463,16 @@ ddb_splitter_draw (GtkWidget *widget,
             splitter->priv->child1 && gtk_widget_get_visible (splitter->priv->child1) &&
             splitter->priv->child2 && gtk_widget_get_visible (splitter->priv->child2))
     {
-        gtk_render_handle (gtk_widget_get_style_context (widget), cr,
-                splitter->priv->handle_pos.x, splitter->priv->handle_pos.y,
-                splitter->priv->handle_pos.width, splitter->priv->handle_pos.height);
+        if (splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_PROP) {
+            gtk_render_handle (gtk_widget_get_style_context (widget), cr,
+                    splitter->priv->handle_pos.x, splitter->priv->handle_pos.y,
+                    splitter->priv->handle_pos.width, splitter->priv->handle_pos.height);
+        }
+        else {
+            gtk_render_background (gtk_widget_get_style_context (widget), cr,
+                    splitter->priv->handle_pos.x, splitter->priv->handle_pos.y,
+                    splitter->priv->handle_pos.width, splitter->priv->handle_pos.height);
+        }
     }
 
     /* Chain up to draw children */
@@ -467,12 +501,21 @@ ddb_splitter_expose (GtkWidget      *widget,
             state = gtk_widget_get_state (widget);
 
         //cairo_t *cr = gdk_cairo_create (gtk_widget_get_window (widget));
-        gtk_paint_handle (gtk_widget_get_style (widget), gtk_widget_get_window (widget),
-                state, GTK_SHADOW_NONE,
-                &splitter->priv->handle_pos, widget, "paned",
-                splitter->priv->handle_pos.x, splitter->priv->handle_pos.y,
-                splitter->priv->handle_pos.width, splitter->priv->handle_pos.height,
-                !splitter->priv->orientation);
+        if (splitter->priv->size_mode == DDB_SPLITTER_SIZE_MODE_PROP) {
+            gtk_paint_handle (gtk_widget_get_style (widget), gtk_widget_get_window (widget),
+                    state, GTK_SHADOW_NONE,
+                    &splitter->priv->handle_pos, widget, "paned",
+                    splitter->priv->handle_pos.x, splitter->priv->handle_pos.y,
+                    splitter->priv->handle_pos.width, splitter->priv->handle_pos.height,
+                    !splitter->priv->orientation);
+        }
+        else {
+            gtk_paint_box (gtk_widget_get_style (widget), gtk_widget_get_window (widget),
+                    state, GTK_SHADOW_NONE,
+                    &splitter->priv->handle_pos, widget, "paned",
+                    splitter->priv->handle_pos.x, splitter->priv->handle_pos.y,
+                    splitter->priv->handle_pos.width, splitter->priv->handle_pos.height);
+        }
         //cairo_destroy (cr);
     }
 
@@ -990,6 +1033,7 @@ ddb_splitter_set_size_mode (DdbSplitter *splitter, DdbSplitterSizeMode size_mode
     if (G_LIKELY (splitter->priv->size_mode != size_mode))
     {
         splitter->priv->size_mode = size_mode;
+        ddb_splitter_update_cursor (splitter);
         gtk_widget_queue_resize (GTK_WIDGET (splitter));
         g_object_notify (G_OBJECT (splitter), "size_mode");
     }
